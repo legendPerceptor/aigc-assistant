@@ -5,8 +5,22 @@ const { Prompt, Image } = require('../models');
 // 获取所有提示词
 router.get('/', async (req, res) => {
   try {
+    // 获取所有提示词，包括关联的图片
     const prompts = await Prompt.findAll({ include: Image });
     res.json(prompts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 获取未被使用的提示词
+router.get('/unused', async (req, res) => {
+  try {
+    // 获取所有提示词，包括关联的图片
+    const prompts = await Prompt.findAll({ include: Image });
+    // 过滤出没有关联图片的提示词
+    const unusedPrompts = prompts.filter(prompt => !prompt.Images || prompt.Images.length === 0);
+    res.json(unusedPrompts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

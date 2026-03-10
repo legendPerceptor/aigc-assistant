@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 function App() {
   const [activeTab, setActiveTab] = useState('prompts');
   const [prompts, setPrompts] = useState([]);
+  const [unusedPrompts, setUnusedPrompts] = useState([]);
   const [images, setImages] = useState([]);
   const [themes, setThemes] = useState([]);
   const [newPrompt, setNewPrompt] = useState('');
@@ -17,6 +18,13 @@ function App() {
       .then(res => res.json())
       .then(data => setPrompts(data));
   }, []);
+
+  // 获取未被使用的提示词
+  useEffect(() => {
+    fetch('/api/prompts/unused')
+      .then(res => res.json())
+      .then(data => setUnusedPrompts(data));
+  }, [images]);
 
   // 获取所有图片
   useEffect(() => {
@@ -322,7 +330,7 @@ function App() {
             <label htmlFor="promptId">关联提示词：</label>
             <select id="promptId" name="promptId">
               <option value="">选择提示词</option>
-              {prompts.map(prompt => (
+              {unusedPrompts.map(prompt => (
                 <option key={prompt.id} value={prompt.id}>{prompt.content.substring(0, 50)}...</option>
               ))}
             </select>
