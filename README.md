@@ -1,0 +1,80 @@
+# AIGC 辅助工具
+
+一个用于管理 AI 生成内容的辅助工具，帮助用户存储、组织和检索 AI 生成的图片和提示词。
+
+## 功能特点
+
+- **提示词管理**：存储和管理 AI 生成的提示词，支持打分和关联图片
+- **图片管理**：上传和管理 AI 生成的图片，支持打分和关联提示词
+- **主题管理**：围绕主题组织参考图片，支持拖拽上传
+- **检索参考**：通过提示词搜索相关图片
+
+## 技术栈
+
+- **后端**：Node.js + Express.js + Sequelize + SQLite
+- **前端**：React + Vite
+
+## 安装步骤
+
+1. **克隆项目**：
+   ```bash
+   git clone <repository-url>
+   cd aigc-assistant
+   ```
+
+2. **安装依赖**：
+   ```bash
+   npm install
+   cd frontend
+   npm install
+   ```
+
+3. **启动服务**：
+   - 启动后端服务：
+     ```bash
+     npm run start:backend
+     ```
+   - 启动前端服务：
+     ```bash
+     cd frontend
+     npm run dev
+     ```
+
+4. **访问应用**：
+   - 前端：http://localhost:5173/
+   - 后端 API：http://localhost:3001/api
+
+## 项目结构
+
+```
+aigc-assistant/
+├── backend/
+│   ├── models/       # 数据库模型
+│   ├── routes/       # API 路由
+│   ├── uploads/      # 上传的图片
+│   ├── server.js     # 后端服务器
+│   └── database.db   # SQLite 数据库
+├── frontend/
+│   ├── src/          # 前端源代码
+│   └── public/       # 前端静态文件
+├── package.json      # 项目配置
+└── README.md         # 项目说明
+```
+
+## API 端点
+
+### 提示词 API
+- `GET /api/prompts` - 获取所有提示词
+- `POST /api/prompts` - 创建新提示词
+- `PUT /api/prompts/:id/score` - 更新提示词评分
+
+### 图片 API
+- `GET /api/images` - 获取所有图片
+- `POST /api/images` - 上传图片
+- `PUT /api/images/:id/score` - 更新图片评分
+
+### 主题 API
+- `GET /api/themes` - 获取所有主题
+- `POST /api/themes` - 创建新主题
+- `POST /api/themes/:id/images` - 为主题添加图片
+- `GET /api/themes/:id/images` - 获取主题的所有图片

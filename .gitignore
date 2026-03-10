@@ -1,0 +1,32 @@
+# 依赖目录
+node_modules/
+
+# 数据库文件
+backend/database.db
+
+# 上传的文件
+backend/uploads/
+
+# 环境变量文件
+.env
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 编辑器配置文件
+.vscode/
+.idea/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 构建输出
+frontend/dist/
+
+# 测试覆盖率
+coverage/
