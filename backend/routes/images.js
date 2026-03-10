@@ -64,9 +64,35 @@ router.delete('/:id', async (req, res) => {
     
     // 从文件系统中删除文件
     const fs = require('fs');
-    const filePath = path.join(__dirname, '..', image.path);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // 使用绝对路径构建文件路径
+    const projectRoot = path.resolve(__dirname, '..', '..');
+    const uploadsDir = path.join(projectRoot, 'backend', 'uploads');
+    console.log('项目根目录:', projectRoot);
+    console.log('上传目录:', uploadsDir);
+    console.log('图片文件名:', image.filename);
+    const filePath = path.join(uploadsDir, image.filename);
+    console.log('删除文件的绝对路径:', filePath);
+    
+    // 检查上传目录是否存在
+    if (fs.existsSync(uploadsDir)) {
+      console.log('上传目录存在');
+      // 列出上传目录中的文件
+      const files = fs.readdirSync(uploadsDir);
+      console.log('上传目录中的文件:', files);
+      // 检查文件是否存在
+      if (fs.existsSync(filePath)) {
+        console.log('文件存在，准备删除');
+        try {
+          fs.unlinkSync(filePath);
+          console.log('文件删除成功:', filePath);
+        } catch (error) {
+          console.error('删除文件失败:', error);
+        }
+      } else {
+        console.log('文件不存在:', filePath);
+      }
+    } else {
+      console.log('上传目录不存在:', uploadsDir);
     }
     
     // 从数据库中删除记录
