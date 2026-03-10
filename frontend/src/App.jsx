@@ -53,6 +53,10 @@ function App() {
     const newPromptData = await response.json();
     setPrompts([...prompts, newPromptData]);
     setNewPrompt('');
+    // 重新获取未使用的提示词列表
+    fetch('/api/prompts/unused')
+      .then(res => res.json())
+      .then(data => setUnusedPrompts(data));
   };
 
   // 处理图片上传
