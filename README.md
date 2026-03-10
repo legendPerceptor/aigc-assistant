@@ -78,3 +78,7 @@ aigc-assistant/
 - `POST /api/themes` - 创建新主题
 - `POST /api/themes/:id/images` - 为主题添加图片
 - `GET /api/themes/:id/images` - 获取主题的所有图片
+
+## 开发者指南
+
+更多开发相关的信息，包括测试方法和数据库查询命令，请查看 [开发者指南](developers.md)。
