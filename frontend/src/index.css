@@ -341,3 +341,45 @@ body {
 .close-btn:hover {
   background-color: #da190b;
 }
+
+.image-card .add-to-theme-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.image-card .add-to-theme-btn:hover {
+  background-color: #45a049;
+}
+
+/* 确保删除按钮样式优先级高于通用按钮样式 */
+.image-card .delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 0, 0, 0.7);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  margin-top: 0;
+  width: 24px;
+}
+
+.image-card .delete-btn:hover {
+  background-color: rgba(255, 0, 0, 0.9);
+}

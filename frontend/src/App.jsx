@@ -527,7 +527,7 @@ function App() {
                     <div className="image-header">
                       <img src={`/uploads/${image.filename}`} alt="AI生成" />
                     </div>
-                    <button onClick={() => handleAddImageToTheme(image.id)}>添加到主题</button>
+                    <button className="add-to-theme-btn" onClick={() => handleAddImageToTheme(image.id)}>添加到主题</button>
                   </div>
                 ))}
               </div>
