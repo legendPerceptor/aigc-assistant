@@ -1,12 +1,12 @@
 import daft
-from daft import DataType
 import base64
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterator
 from openai import OpenAI
 from config import get_settings
 import concurrent.futures
 import numpy as np
+from numpy.typing import NDArray
 
 settings = get_settings()
 client = OpenAI(api_key=settings.openai_api_key)
@@ -93,14 +93,9 @@ class BatchImageProcessor:
             }
         return result
 
-    def process_batch_with_daft(self, image_paths: list[str]) -> list[dict]:
-        df = self.create_image_dataframe(image_paths)
-
-        def process_row(row):
-            return self.process_single_with_path(row["image_path"])
-
-        results = [process_row({"image_path": path}) for path in image_paths]
-        return results
+    def process_batch_with_daft(self, image_paths: list[str]) -> Iterator[dict]:
+        for path in image_paths:
+            yield self.process_single_with_path(path)
 
     def process_batch_parallel(self, image_paths: list[str]) -> list[dict]:
         results = []
@@ -125,7 +120,7 @@ class BatchImageProcessor:
         return results
 
     def process_directory(
-        self, directory_path: str, extensions: list[str] = None, parallel: bool = True
+        self, directory_path: str, extensions: Optional[list[str]] = None, parallel: bool = True
     ) -> list[dict]:
         if extensions is None:
             extensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
@@ -140,7 +135,7 @@ class BatchImageProcessor:
 
         if parallel:
             return self.process_batch_parallel(image_paths)
-        return self.process_batch_with_daft(image_paths)
+        return list(self.process_batch_with_daft(image_paths))
 
     def create_analysis_dataframe(self, results: list[dict]) -> daft.DataFrame:
         data = {
@@ -167,15 +162,15 @@ class SemanticSearch:
         return response.data[0].embedding
 
     def cosine_similarity(self, vec1: list[float], vec2: list[float]) -> float:
-        vec1 = np.array(vec1)
-        vec2 = np.array(vec2)
-        return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
+        arr1: NDArray = np.array(vec1)
+        arr2: NDArray = np.array(vec2)
+        return float(np.dot(arr1, arr2) / (np.linalg.norm(arr1) * np.linalg.norm(arr2)))
 
     def cosine_similarity_batch(
         self, query_vec: list[float], embeddings: list[list[float]]
     ) -> list[float]:
-        query = np.array(query_vec)
-        emb_matrix = np.array(embeddings)
+        query: NDArray = np.array(query_vec)
+        emb_matrix: NDArray = np.array(embeddings)
         norms = np.linalg.norm(emb_matrix, axis=1)
         similarities = np.dot(emb_matrix, query) / (norms * np.linalg.norm(query))
         return similarities.tolist()
