@@ -483,96 +483,103 @@ function App() {
           <div className="prompts-list">
             <h3>历史提示词</h3>
             {prompts.map(prompt => (
-              <div key={prompt.id} className="prompt-item">
-                <div className="prompt-header">
-                  <p>{prompt.content}</p>
-                  <button type="button" className="delete-btn" onClick={(e) => handleDeletePrompt(e, prompt.id)}>×</button>
-                </div>
-                <div className="score">
-                  <label>评分：</label>
-                  {editingScores[`prompts_${prompt.id}`] ? (
-                    <div className="score-edit">
-                      <StarRating 
-                        type="prompts" 
-                        id={prompt.id} 
-                        score={scoreValues[`prompts_${prompt.id}`] || 0} 
-                        onScoreChange={handleScoreChange} 
-                      />
-                      <div className="score-actions">
-                        <button onClick={() => handleConfirmScore('prompts', prompt.id)}>确认</button>
-                        <button onClick={() => handleCancelScore('prompts', prompt.id)}>取消</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="score-value" onClick={() => handleStartEditScore('prompts', prompt.id)}>
-                      {prompt.score ? (
-                        <div className="star-rating static">
-                          {Array(5).fill(0).map((_, i) => {
-                            const starValue = (i + 1) * 2;
-                            if (prompt.score >= starValue) {
-                              return <span key={i} className="star full">★</span>;
-                            } else if (prompt.score >= starValue - 1) {
-                              return <span key={i} className="star half">★</span>;
-                            } else {
-                              return <span key={i} className="star empty">★</span>;
-                            }
-                          })}
-                        </div>
-                      ) : '点击评分'}
-                    </span>
-                  )}
-                </div>
-                {prompt.Images && prompt.Images.length > 0 && (
-                  <div className="prompt-images">
-                    <h4>相关图片：</h4>
-                    <div className="images-grid">
-                      {prompt.Images.map(image => (
-                        <div key={image.id} className="image-card">
-                          <div className="image-header">
-                            <img src={`/uploads/${image.filename}`} alt="AI生成" />
-                            <button type="button" className="delete-btn" onClick={(e) => handleDeleteImage(e, image.id)}>×</button>
+              <div key={prompt.id} className="prompt-container">
+                <div className="prompt-content">
+                  <div className="prompt-header">
+                    <p>{prompt.content}</p>
+                  </div>
+                  <div className="score-container">
+                    <div className="score">
+                      <label>评分：</label>
+                      {editingScores[`prompts_${prompt.id}`] ? (
+                        <div className="score-edit">
+                          <StarRating 
+                            type="prompts" 
+                            id={prompt.id} 
+                            score={scoreValues[`prompts_${prompt.id}`] || 0} 
+                            onScoreChange={handleScoreChange} 
+                          />
+                          <div className="score-actions">
+                            <button onClick={() => handleConfirmScore('prompts', prompt.id)}>确认</button>
+                            <button onClick={() => handleCancelScore('prompts', prompt.id)}>取消</button>
                           </div>
-                          <div className="content">
-                            <div className="score">
-                              <label>评分：</label>
-                              {editingScores[`images_${image.id}`] ? (
-                                <div className="score-edit">
-                                  <StarRating 
-                                    type="images" 
-                                    id={image.id} 
-                                    score={scoreValues[`images_${image.id}`] || 0} 
-                                    onScoreChange={handleScoreChange} 
-                                  />
-                                  <div className="score-actions">
-                                    <button onClick={() => handleConfirmScore('images', image.id)}>确认</button>
-                                    <button onClick={() => handleCancelScore('images', image.id)}>取消</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="score-value" onClick={() => handleStartEditScore('images', image.id)}>
-                                  {image.score ? (
-                                    <div className="star-rating static">
-                                      {Array(5).fill(0).map((_, i) => {
-                                        const starValue = (i + 1) * 2;
-                                        if (image.score >= starValue) {
-                                          return <span key={i} className="star full">★</span>;
-                                        } else if (image.score >= starValue - 1) {
-                                          return <span key={i} className="star half">★</span>;
-                                        } else {
-                                          return <span key={i} className="star empty">★</span>;
-                                        }
-                                      })}
-                                    </div>
-                                  ) : '点击评分'}
-                                </span>
-                              )}
+                        </div>
+                      ) : (
+                        <span className="score-value" onClick={() => handleStartEditScore('prompts', prompt.id)}>
+                          {prompt.score ? (
+                            <div className="star-rating static">
+                              {Array(5).fill(0).map((_, i) => {
+                                const starValue = (i + 1) * 2;
+                                if (prompt.score >= starValue) {
+                                  return <span key={i} className="star full">★</span>;
+                                } else if (prompt.score >= starValue - 1) {
+                                  return <span key={i} className="star half">★</span>;
+                                } else {
+                                  return <span key={i} className="star empty">★</span>;
+                                }
+                              })}
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          ) : '点击评分'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="prompt-actions">
+                      <button type="button" className="delete-prompt-btn" onClick={(e) => handleDeletePrompt(e, prompt.id)}>删除提示词</button>
                     </div>
                   </div>
-                )}
+                </div>
+                <div className="prompt-images">
+                  {prompt.Images && prompt.Images.length > 0 ? (
+                    prompt.Images.map(image => (
+                      <div key={image.id} className="image-card">
+                        <div className="image-header">
+                          <img src={`/uploads/${image.filename}`} alt="AI生成" />
+                          <button type="button" className="delete-btn" onClick={(e) => handleDeleteImage(e, image.id)}>×</button>
+                        </div>
+                        <div className="content">
+                          <div className="score">
+                            <label>评分：</label>
+                            {editingScores[`images_${image.id}`] ? (
+                              <div className="score-edit">
+                                <StarRating 
+                                  type="images" 
+                                  id={image.id} 
+                                  score={scoreValues[`images_${image.id}`] || 0} 
+                                  onScoreChange={handleScoreChange} 
+                                />
+                                <div className="score-actions">
+                                  <button onClick={() => handleConfirmScore('images', image.id)}>确认</button>
+                                  <button onClick={() => handleCancelScore('images', image.id)}>取消</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="score-value" onClick={() => handleStartEditScore('images', image.id)}>
+                                {image.score ? (
+                                  <div className="star-rating static">
+                                    {Array(5).fill(0).map((_, i) => {
+                                      const starValue = (i + 1) * 2;
+                                      if (image.score >= starValue) {
+                                        return <span key={i} className="star full">★</span>;
+                                      } else if (image.score >= starValue - 1) {
+                                        return <span key={i} className="star half">★</span>;
+                                      } else {
+                                        return <span key={i} className="star empty">★</span>;
+                                      }
+                                    })}
+                                  </div>
+                                ) : '点击评分'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-images">
+                      <p>无关联图片</p>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -135,9 +135,74 @@ body {
   background-color: rgba(255, 0, 0, 0.9);
 }
 
+.prompt-container {
+  display: flex;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+.prompt-content {
+  flex: 1;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+}
+
 .prompt-header {
   position: relative;
+  margin-bottom: 15px;
+}
+
+.prompt-header p {
+  font-size: 16px;
+  line-height: 1.5;
   margin-bottom: 10px;
+}
+
+.score-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.prompt-actions .delete-prompt-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: #f44336;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.prompt-actions .delete-prompt-btn:hover {
+  background-color: #da190b;
+}
+
+.prompt-images {
+  width: 300px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.no-images {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-style: italic;
+  border: 1px dashed #ddd;
+  border-radius: 5px;
+  padding: 20px;
+  text-align: center;
 }
 
 .image-card .content {
@@ -440,12 +505,12 @@ body {
 }
 
 /* 提示词评分星星（黄色） */
-.prompt-item .star-container:hover {
+.prompt-content .star-container:hover {
   transform: scale(1.1);
   box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
 }
 
-.prompt-item .star {
+.prompt-content .star {
   position: relative;
   z-index: 1;
   color: #ddd;
@@ -453,18 +518,18 @@ body {
   display: inline-block;
 }
 
-.prompt-item .star.full {
+.prompt-content .star.full {
   color: #ffc107;
 }
 
-.prompt-item .star.half {
+.prompt-content .star.half {
   color: #ffc107;
   position: relative;
   display: inline-block;
   overflow: hidden;
 }
 
-.prompt-item .star.half::before {
+.prompt-content .star.half::before {
   content: '★';
   position: absolute;
   left: 0;
@@ -475,7 +540,7 @@ body {
   z-index: 1;
 }
 
-.prompt-item .star.half::after {
+.prompt-content .star.half::after {
   content: '★';
   position: absolute;
   right: 0;
@@ -486,11 +551,11 @@ body {
   z-index: 0;
 }
 
-.prompt-item .star.empty {
+.prompt-content .star.empty {
   color: #ddd;
 }
 
-.prompt-item .star:hover {
+.prompt-content .star:hover {
   color: #ffc107;
 }
 
