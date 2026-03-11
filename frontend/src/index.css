@@ -439,12 +439,13 @@ body {
   height: 30px;
 }
 
-.star-container:hover {
+/* 提示词评分星星（黄色） */
+.prompt-item .star-container:hover {
   transform: scale(1.1);
   box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
 }
 
-.star {
+.prompt-item .star {
   position: relative;
   z-index: 1;
   color: #ddd;
@@ -452,18 +453,18 @@ body {
   display: inline-block;
 }
 
-.star.full {
+.prompt-item .star.full {
   color: #ffc107;
 }
 
-.star.half {
+.prompt-item .star.half {
   color: #ffc107;
   position: relative;
   display: inline-block;
   overflow: hidden;
 }
 
-.star.half::before {
+.prompt-item .star.half::before {
   content: '★';
   position: absolute;
   left: 0;
@@ -474,7 +475,7 @@ body {
   z-index: 1;
 }
 
-.star.half::after {
+.prompt-item .star.half::after {
   content: '★';
   position: absolute;
   right: 0;
@@ -485,12 +486,67 @@ body {
   z-index: 0;
 }
 
-.star.empty {
+.prompt-item .star.empty {
   color: #ddd;
 }
 
-.star:hover {
+.prompt-item .star:hover {
   color: #ffc107;
+}
+
+/* 图片评分星星（绿色） */
+.image-card .star-container:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.image-card .star {
+  position: relative;
+  z-index: 1;
+  color: #ddd;
+  transition: color 0.2s;
+  display: inline-block;
+}
+
+.image-card .star.full {
+  color: #4CAF50;
+}
+
+.image-card .star.half {
+  color: #4CAF50;
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.image-card .star.half::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  overflow: hidden;
+  color: #4CAF50;
+  z-index: 1;
+}
+
+.image-card .star.half::after {
+  content: '★';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  color: #ddd;
+  z-index: 0;
+}
+
+.image-card .star.empty {
+  color: #ddd;
+}
+
+.image-card .star:hover {
+  color: #4CAF50;
 }
 
 /* 半星点击区域 */
