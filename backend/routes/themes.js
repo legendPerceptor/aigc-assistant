@@ -48,4 +48,23 @@ router.get('/:id/images', async (req, res) => {
   }
 });
 
+// 从主题中移除图片
+router.delete('/:id/images/:imageId', async (req, res) => {
+  try {
+    const themeImage = await ThemeImage.findOne({
+      where: {
+        themeId: req.params.id,
+        imageId: req.params.imageId
+      }
+    });
+    if (!themeImage) {
+      return res.status(404).json({ error: 'ThemeImage not found' });
+    }
+    await themeImage.destroy();
+    res.json({ message: 'Image removed from theme successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

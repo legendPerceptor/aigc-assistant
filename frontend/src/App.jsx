@@ -215,7 +215,38 @@ function App() {
     // 重新获取主题数据
     fetch('/api/themes')
       .then(res => res.json())
-      .then(data => setThemes(data));
+      .then(data => {
+        setThemes(data);
+        // 更新selectedTheme状态，确保当前打开的主题详情页面能立即显示新添加的图片
+        const updatedTheme = data.find(theme => theme.id === selectedTheme.id);
+        if (updatedTheme) {
+          setSelectedTheme(updatedTheme);
+        }
+      });
+  };
+
+  // 处理从主题中移出图片
+  const handleRemoveImageFromTheme = async (imageId) => {
+    if (!selectedTheme) return;
+    try {
+      const response = await fetch(`/api/themes/${selectedTheme.id}/images/${imageId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        // 重新获取主题数据
+        const themesData = await fetch('/api/themes').then(res => res.json());
+        setThemes(themesData);
+        // 更新selectedTheme状态，确保当前打开的主题详情页面能立即显示移除后的图片列表
+        const updatedTheme = themesData.find(theme => theme.id === selectedTheme.id);
+        if (updatedTheme) {
+          setSelectedTheme(updatedTheme);
+        }
+      } else {
+        console.error('从主题中移除图片失败');
+      }
+    } catch (error) {
+      console.error('从主题中移除图片时发生错误:', error);
+    }
   };
 
   // 处理搜索
@@ -478,18 +509,20 @@ function App() {
                   <div key={image.id} className="image-card">
                     <div className="image-header">
                       <img src={`/uploads/${image.filename}`} alt="参考图片" />
-                      <button type="button" className="delete-btn" onClick={(e) => handleDeleteImage(e, image.id)}>×</button>
+                      <button type="button" className="delete-btn" onClick={() => handleRemoveImageFromTheme(image.id)}>×</button>
                     </div>
                   </div>
                 ))}
               </div>
               <h4>添加图片到主题</h4>
               <div className="images-grid">
-                {images.map(image => (
+                {/* 过滤掉已经在当前主题中的图片 */}
+                {images.filter(image => {
+                  return !selectedTheme.Images || !selectedTheme.Images.some(img => img.id === image.id);
+                }).map(image => (
                   <div key={image.id} className="image-card">
                     <div className="image-header">
                       <img src={`/uploads/${image.filename}`} alt="AI生成" />
-                      <button type="button" className="delete-btn" onClick={(e) => handleDeleteImage(e, image.id)}>×</button>
                     </div>
                     <button onClick={() => handleAddImageToTheme(image.id)}>添加到主题</button>
                   </div>
