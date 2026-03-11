@@ -14,6 +14,7 @@ function App() {
   const [draggedImage, setDraggedImage] = useState(null);
   const [selectedPromptId, setSelectedPromptId] = useState('');
   const [showPromptSelection, setShowPromptSelection] = useState(false);
+  const [editingScores, setEditingScores] = useState({});
 
   // 获取所有提示词
   useEffect(() => {
@@ -74,6 +75,14 @@ function App() {
     setImages([...images, newImageData]);
   };
 
+  // 处理开始编辑评分
+  const handleStartEditScore = (type, id) => {
+    setEditingScores(prev => ({
+      ...prev,
+      [`${type}_${id}`]: true
+    }));
+  };
+
   // 处理评分更新
   const handleScoreUpdate = async (type, id, score) => {
     const response = await fetch(`/api/${type}/${id}/score`, {
@@ -94,6 +103,12 @@ function App() {
         image.id === id ? updatedData : image
       ));
     }
+    
+    // 结束编辑状态
+    setEditingScores(prev => ({
+      ...prev,
+      [`${type}_${id}`]: false
+    }));
   };
 
   // 处理删除图片
@@ -354,13 +369,19 @@ function App() {
                 </div>
                 <div className="score">
                   <label>评分：</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={prompt.score || ''}
-                    onChange={(e) => handleScoreUpdate('prompts', prompt.id, parseInt(e.target.value))}
-                  />
+                  {editingScores[`prompts_${prompt.id}`] ? (
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={prompt.score || ''}
+                      onChange={(e) => handleScoreUpdate('prompts', prompt.id, parseInt(e.target.value))}
+                    />
+                  ) : (
+                    <span className="score-value" onClick={() => handleStartEditScore('prompts', prompt.id)}>
+                      {prompt.score ? prompt.score : '点击评分'}
+                    </span>
+                  )}
                 </div>
                 {prompt.Images && prompt.Images.length > 0 && (
                   <div className="prompt-images">
@@ -375,13 +396,19 @@ function App() {
                           <div className="content">
                             <div className="score">
                               <label>评分：</label>
-                              <input
-                                type="number"
-                                min="0"
-                                max="10"
-                                value={image.score || ''}
-                                onChange={(e) => handleScoreUpdate('images', image.id, parseInt(e.target.value))}
-                              />
+                              {editingScores[`images_${image.id}`] ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="10"
+                                  value={image.score || ''}
+                                  onChange={(e) => handleScoreUpdate('images', image.id, parseInt(e.target.value))}
+                                />
+                              ) : (
+                                <span className="score-value" onClick={() => handleStartEditScore('images', image.id)}>
+                                  {image.score ? image.score : '点击评分'}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -457,13 +484,19 @@ function App() {
                   )}
                   <div className="score">
                     <label>评分：</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={image.score || ''}
-                      onChange={(e) => handleScoreUpdate('images', image.id, parseInt(e.target.value))}
-                    />
+                    {editingScores[`images_${image.id}`] ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={image.score || ''}
+                        onChange={(e) => handleScoreUpdate('images', image.id, parseInt(e.target.value))}
+                      />
+                    ) : (
+                      <span className="score-value" onClick={() => handleStartEditScore('images', image.id)}>
+                        {image.score ? image.score : '点击评分'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

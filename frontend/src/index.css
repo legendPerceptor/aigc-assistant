@@ -383,3 +383,19 @@ body {
 .image-card .delete-btn:hover {
   background-color: rgba(255, 0, 0, 0.9);
 }
+
+.score-value {
+  cursor: pointer;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  min-width: 50px;
+  display: inline-block;
+  text-align: center;
+}
+
+.score-value:hover {
+  background-color: #e6f7e6;
+  border-color: #4CAF50;
+}
