@@ -442,11 +442,13 @@ function App() {
   // 处理暂存图片的上传
   const handleStagedImageUpload = async (e) => {
     e.preventDefault();
-    if (!draggedImage || !selectedPromptId) return;
+    if (!draggedImage) return;
     
     const formData = new FormData();
     formData.append('image', draggedImage);
-    formData.append('promptId', selectedPromptId);
+    if (selectedPromptId) {
+      formData.append('promptId', selectedPromptId);
+    }
     
     const response = await fetch('/api/images', {
       method: 'POST',
