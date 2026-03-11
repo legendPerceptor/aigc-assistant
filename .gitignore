@@ -9,6 +9,7 @@ backend/uploads/
 
 # 环境变量文件
 .env
+image-service/.env
 
 # 日志文件
 *.log
@@ -30,3 +31,20 @@ frontend/dist/
 
 # 测试覆盖率
 coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+image-service/.venv/
+image-service/venv/
+image-service/env/
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.uv/

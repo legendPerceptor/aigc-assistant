@@ -19,7 +19,14 @@ function ImageCard({
   onPromptChange,
   showPromptEdit = true,
   showScore = true,
+  showSimilarity = false,
+  similarity = null,
 }) {
+  const formatSimilarity = (sim) => {
+    if (sim === null || sim === undefined) return null;
+    return `${(sim * 100).toFixed(1)}%`;
+  };
+
   return (
     <div className="image-card">
       <div className="image-header">
@@ -29,8 +36,29 @@ function ImageCard({
             ×
           </button>
         )}
+        {showSimilarity && similarity !== null && (
+          <div className="similarity-badge">相似度: {formatSimilarity(similarity)}</div>
+        )}
       </div>
       <div className="content">
+        {image.description && (
+          <div className="ai-description">
+            <div className="description-header">
+              <span className="ai-label">AI 描述</span>
+            </div>
+            <p className="description-text">
+              {image.description.length > 100
+                ? `${image.description.substring(0, 100)}...`
+                : image.description}
+            </p>
+            {image.analyzedAt && (
+              <span className="analyzed-time">
+                分析于: {new Date(image.analyzedAt).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        )}
+
         {showPromptEdit &&
           (editingImagePrompt === image.id ? (
             <div className="prompt-edit">
@@ -97,11 +125,7 @@ function ImageCard({
               </div>
             ) : (
               <span className="score-value" onClick={() => onScoreEdit('images', image.id)}>
-                {image.score ? (
-                  <StaticStarRating score={image.score} />
-                ) : (
-                  '点击评分'
-                )}
+                {image.score ? <StaticStarRating score={image.score} /> : '点击评分'}
               </span>
             )}
           </div>
@@ -117,11 +141,7 @@ export function SimpleImageCard({ image, onDelete, onAddToTheme }) {
       <div className="image-header">
         <img src={`/uploads/${image.filename}`} alt="AI生成" />
         {onDelete && (
-          <button
-            type="button"
-            className="delete-btn"
-            onClick={() => onDelete(image.id)}
-          >
+          <button type="button" className="delete-btn" onClick={() => onDelete(image.id)}>
             ×
           </button>
         )}

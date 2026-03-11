@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { Image, Prompt } = require('../models');
+const imageServiceClient = require('../services/imageServiceClient');
 
-// 配置文件上传
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, './backend/uploads');
@@ -16,7 +17,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 上传图片
 router.post('/', upload.single('image'), async (req, res) => {
   try {
     const image = await Image.create({
@@ -24,7 +24,22 @@ router.post('/', upload.single('image'), async (req, res) => {
       path: req.file.path,
       promptId: req.body.promptId,
     });
-    // 重新查询图片信息，包含关联的提示词
+
+    const projectRoot = path.resolve(__dirname, '..', '..');
+    const absolutePath = path.join(projectRoot, 'backend', 'uploads', req.file.filename);
+
+    try {
+      const analysis = await imageServiceClient.analyzeImage(absolutePath);
+      await image.update({
+        description: analysis.description,
+        embedding: analysis.embedding,
+        embeddingModel: analysis.model,
+        analyzedAt: new Date(),
+      });
+    } catch (analyzeError) {
+      console.error('AI分析失败，但图片已保存:', analyzeError.message);
+    }
+
     const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
     res.json(imageWithPrompt);
   } catch (error) {
@@ -32,7 +47,6 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-// 获取所有图片
 router.get('/', async (req, res) => {
   try {
     const images = await Image.findAll({ include: Prompt });
@@ -42,7 +56,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 更新图片评分
 router.put('/:id/score', async (req, res) => {
   try {
     const image = await Image.findByPk(req.params.id);
@@ -50,7 +63,6 @@ router.put('/:id/score', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
     await image.update({ score: req.body.score });
-    // 重新查询图片信息，包含关联的提示词
     const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
     res.json(imageWithPrompt);
   } catch (error) {
@@ -58,7 +70,6 @@ router.put('/:id/score', async (req, res) => {
   }
 });
 
-// 更新图片的提示词绑定
 router.put('/:id/prompt', async (req, res) => {
   try {
     const image = await Image.findByPk(req.params.id);
@@ -66,7 +77,6 @@ router.put('/:id/prompt', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
     await image.update({ promptId: req.body.promptId });
-    // 重新查询图片信息，包含关联的提示词
     const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
     res.json(imageWithPrompt);
   } catch (error) {
@@ -74,7 +84,6 @@ router.put('/:id/prompt', async (req, res) => {
   }
 });
 
-// 删除图片
 router.delete('/:id', async (req, res) => {
   try {
     const image = await Image.findByPk(req.params.id);
@@ -82,44 +91,162 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Image not found' });
     }
 
-    // 从文件系统中删除文件
-    const fs = require('fs');
-    // 使用绝对路径构建文件路径
     const projectRoot = path.resolve(__dirname, '..', '..');
     const uploadsDir = path.join(projectRoot, 'backend', 'uploads');
-    console.log('项目根目录:', projectRoot);
-    console.log('上传目录:', uploadsDir);
-    console.log('图片文件名:', image.filename);
     const filePath = path.join(uploadsDir, image.filename);
-    console.log('删除文件的绝对路径:', filePath);
 
-    // 检查上传目录是否存在
-    if (fs.existsSync(uploadsDir)) {
-      console.log('上传目录存在');
-      // 列出上传目录中的文件
-      const files = fs.readdirSync(uploadsDir);
-      console.log('上传目录中的文件:', files);
-      // 检查文件是否存在
-      if (fs.existsSync(filePath)) {
-        console.log('文件存在，准备删除');
-        try {
-          fs.unlinkSync(filePath);
-          console.log('文件删除成功:', filePath);
-        } catch (error) {
-          console.error('删除文件失败:', error);
-        }
-      } else {
-        console.log('文件不存在:', filePath);
-      }
-    } else {
-      console.log('上传目录不存在:', uploadsDir);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
 
-    // 从数据库中删除记录
     await image.destroy();
     res.json({ message: 'Image deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/:id/analyze', async (req, res) => {
+  try {
+    const image = await Image.findByPk(req.params.id);
+    if (!image) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const projectRoot = path.resolve(__dirname, '..', '..');
+    const absolutePath = path.join(projectRoot, 'backend', 'uploads', image.filename);
+
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ error: 'Image file not found' });
+    }
+
+    const analysis = await imageServiceClient.analyzeImage(absolutePath);
+    await image.update({
+      description: analysis.description,
+      embedding: analysis.embedding,
+      embeddingModel: analysis.model,
+      analyzedAt: new Date(),
+    });
+
+    const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
+    res.json(imageWithPrompt);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/search', async (req, res) => {
+  try {
+    const { query, topK = 10 } = req.body;
+
+    const images = await Image.findAll({ include: Prompt });
+    const imagesWithEmbeddings = images
+      .filter((img) => img.embedding)
+      .map((img) => ({
+        id: img.id,
+        filename: img.filename,
+        description: img.description,
+        embedding: img.embedding,
+        score: img.score,
+        Prompt: img.Prompt,
+      }));
+
+    if (imagesWithEmbeddings.length === 0) {
+      return res.json([]);
+    }
+
+    const results = await imageServiceClient.searchByText(query, imagesWithEmbeddings, topK);
+
+    const resultIds = results.map((r) => r.id);
+    const fullImages = await Image.findAll({
+      where: { id: resultIds },
+      include: Prompt,
+    });
+
+    const imageMap = new Map(fullImages.map((img) => [img.id, img]));
+    const sortedResults = results
+      .map((r) => {
+        const img = imageMap.get(r.id);
+        if (img) {
+          return {
+            ...img.toJSON(),
+            similarity: r.similarity,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    res.json(sortedResults);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/search-by-image', upload.single('image'), async (req, res) => {
+  try {
+    const { topK = 10 } = req.body;
+
+    const images = await Image.findAll({ include: Prompt });
+    const imagesWithEmbeddings = images
+      .filter((img) => img.embedding)
+      .map((img) => ({
+        id: img.id,
+        filename: img.filename,
+        description: img.description,
+        embedding: img.embedding,
+        score: img.score,
+      }));
+
+    if (imagesWithEmbeddings.length === 0) {
+      return res.json([]);
+    }
+
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const results = await imageServiceClient.searchByImage(
+      fileBuffer,
+      req.file.originalname,
+      imagesWithEmbeddings,
+      topK
+    );
+
+    fs.unlinkSync(req.file.path);
+
+    const resultIds = results.map((r) => r.id);
+    const fullImages = await Image.findAll({
+      where: { id: resultIds },
+      include: Prompt,
+    });
+
+    const imageMap = new Map(fullImages.map((img) => [img.id, img]));
+    const sortedResults = results
+      .map((r) => {
+        const img = imageMap.get(r.id);
+        if (img) {
+          return {
+            ...img.toJSON(),
+            similarity: r.similarity,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    res.json(sortedResults);
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/service/status', async (req, res) => {
+  try {
+    const isHealthy = await imageServiceClient.healthCheck();
+    res.json({ status: isHealthy ? 'connected' : 'disconnected' });
+  } catch (error) {
+    res.json({ status: 'error', message: error.message });
   }
 });
 
