@@ -440,6 +440,19 @@ body {
 .star.half {
   color: #ffc107;
   position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.star.half::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  overflow: hidden;
+  color: #ffc107;
+  z-index: 1;
 }
 
 .star.half::after {
@@ -447,10 +460,10 @@ body {
   position: absolute;
   right: 0;
   top: 0;
-  width: 50%;
+  width: 100%;
   overflow: hidden;
   color: #ddd;
-  z-index: 2;
+  z-index: 0;
 }
 
 .star.empty {
