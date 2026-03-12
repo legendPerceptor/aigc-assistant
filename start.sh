@@ -26,6 +26,9 @@ cd image-service
 uv sync
 cd ..
 
+echo "📦 安装 Node.js 依赖..."
+npm install
+
 echo ""
 echo "🔄 启动所有服务..."
 echo "   - Node.js Backend: http://localhost:3001"
