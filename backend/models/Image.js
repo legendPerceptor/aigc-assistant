@@ -1,7 +1,9 @@
 const { DataTypes } = require('sequelize');
 
-const Image = (sequelize) => {
-  return sequelize.define('Image', {
+const Image = (sequelize, dbType = 'sqlite') => {
+  const isPostgres = dbType === 'postgres';
+
+  const schema = {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -28,18 +30,6 @@ const Image = (sequelize) => {
       allowNull: true,
       comment: 'AI生成的图片描述',
     },
-    embedding: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      comment: '图片嵌入向量(JSON格式)',
-      get() {
-        const value = this.getDataValue('embedding');
-        return value ? JSON.parse(value) : null;
-      },
-      set(value) {
-        this.setDataValue('embedding', value ? JSON.stringify(value) : null);
-      },
-    },
     embeddingModel: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -54,7 +44,58 @@ const Image = (sequelize) => {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
-  });
+  };
+
+  if (isPostgres) {
+    schema.embedding = {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: '图片嵌入向量(vector类型或JSON格式)',
+    };
+    schema.embeddingVector = {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'PostgreSQL vector类型存储',
+    };
+  } else {
+    schema.embedding = {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: '图片嵌入向量(JSON格式)',
+      get() {
+        const value = this.getDataValue('embedding');
+        return value ? JSON.parse(value) : null;
+      },
+      set(value) {
+        this.setDataValue('embedding', value ? JSON.stringify(value) : null);
+      },
+    };
+  }
+
+  const model = sequelize.define('Image', schema);
+
+  if (isPostgres) {
+    model.prototype.getEmbedding = function () {
+      const value = this.embedding;
+      return value ? JSON.parse(value) : null;
+    };
+
+    model.prototype.setEmbedding = function (value) {
+      this.embedding = value ? JSON.stringify(value) : null;
+      return this;
+    };
+
+    model.prototype.getEmbeddingVector = function () {
+      return this.embeddingVector;
+    };
+
+    model.prototype.setEmbeddingVector = function (value) {
+      this.embeddingVector = value;
+      return this;
+    };
+  }
+
+  return model;
 };
 
 module.exports = Image;
