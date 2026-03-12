@@ -29,12 +29,21 @@ function ImagesPage({
   const [editingImagePrompt, setEditingImagePrompt] = useState(null);
   const [selectedImagePromptId, setSelectedImagePromptId] = useState('');
   const [batchResult, setBatchResult] = useState(null);
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
 
   const handleImageUpload = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    
+    // 使用状态中的autoAnalyze值
+    if (!autoAnalyze) {
+      formData.set('autoAnalyze', 'false');
+    }
+    
     await onUploadImage(formData);
     e.target.reset();
+    // 重置checkbox状态为默认值
+    setAutoAnalyze(true);
   };
 
   const handleDragOver = (e) => {
@@ -67,11 +76,14 @@ function ImagesPage({
     if (selectedPromptId) {
       formData.append('promptId', selectedPromptId);
     }
+    formData.append('autoAnalyze', autoAnalyze.toString());
 
     await onUploadImage(formData);
     setDraggedImage(null);
     setSelectedPromptId('');
     setShowPromptSelection(false);
+    // 重置checkbox状态为默认值
+    setAutoAnalyze(true);
   };
 
   const handleCancelStagedImage = () => {
@@ -113,47 +125,126 @@ function ImagesPage({
   return (
     <div className="section">
       <h2>图片管理</h2>
-      <form onSubmit={handleImageUpload} className="form-group">
-        <label htmlFor="image">上传图片：</label>
-        <input type="file" id="image" name="image" />
-        <label htmlFor="promptId">关联提示词：</label>
-        <select id="promptId" name="promptId">
-          <option value="">选择提示词</option>
-          {unusedPrompts.map((prompt) => (
-            <option key={prompt.id} value={prompt.id}>
-              {prompt.content.substring(0, 50)}...
-            </option>
-          ))}
-        </select>
-        <button type="submit">上传图片</button>
-      </form>
-      <div
-        className="drag-drop-area"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <p>拖拽图片到这里上传</p>
-      </div>
+      
+      {/* 当没有暂存图片时，显示普通上传表单和拖拽区域 */}
+      {!draggedImage && (
+        <>
+          <form onSubmit={handleImageUpload} className="form-group">
+            <label htmlFor="image">上传图片：</label>
+            <input type="file" id="image" name="image" />
+            <label htmlFor="promptId">关联提示词：</label>
+            <select id="promptId" name="promptId">
+              <option value="">选择提示词</option>
+              {unusedPrompts.map((prompt) => (
+                <option key={prompt.id} value={prompt.id}>
+                  {prompt.content.substring(0, 50)}...
+                </option>
+              ))}
+            </select>
+            <div className="checkbox-group">
+              <input 
+                type="checkbox" 
+                id="autoAnalyze" 
+                name="autoAnalyze" 
+                checked={autoAnalyze}
+                onChange={(e) => setAutoAnalyze(e.target.checked)}
+              />
+              <label htmlFor="autoAnalyze">自动进行AI分析</label>
+            </div>
+            <button type="submit">上传图片</button>
+          </form>
+          <div
+            className="drag-drop-area"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <p>拖拽图片到这里上传</p>
+          </div>
+        </>
+      )}
 
-      <div className="batch-analyze-section">
-        <button
-          onClick={() => handleBatchAnalyze(false)}
-          disabled={batchAnalyzing}
-          className="batch-analyze-btn"
+
+
+      {/* 当有暂存图片时，显示暂存图片部分 */}
+      {draggedImage && (
+        <div className="staged-image-section">
+          <h3>暂存图片</h3>
+          <div className="staged-image-preview">
+            <img src={URL.createObjectURL(draggedImage)} alt="暂存图片" />
+            <p>文件名: {draggedImage.name}</p>
+            <p>大小: {(draggedImage.size / 1024).toFixed(2)} KB</p>
+          </div>
+          <form onSubmit={handleStagedImageUpload} className="form-group">
+            <label htmlFor="stagedPromptId">选择提示词：</label>
+            <select
+              id="stagedPromptId"
+              value={selectedPromptId}
+              onChange={(e) => setSelectedPromptId(e.target.value)}
+            >
+              <option value="">无</option>
+              {unusedPrompts.map((prompt) => (
+                <option key={prompt.id} value={prompt.id}>
+                  {prompt.content.substring(0, 50)}...
+                </option>
+              ))}
+            </select>
+            <div className="checkbox-group">
+              <input 
+                type="checkbox" 
+                id="stagedAutoAnalyze" 
+                name="stagedAutoAnalyze" 
+                checked={autoAnalyze}
+                onChange={(e) => setAutoAnalyze(e.target.checked)}
+              />
+              <label htmlFor="stagedAutoAnalyze">自动进行AI分析</label>
+            </div>
+            <div className="staged-image-actions">
+              <button type="submit">确认上传</button>
+              <button type="button" onClick={handleCancelStagedImage}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 筛选栏 - 放在图片列表上方，包含批量分析按钮 */}
+      <div className="filter-section">
+        <label>筛选：</label>
+        <select
+          value={analyzedFilter}
+          onChange={(e) => onAnalyzedFilterChange(e.target.value)}
+          className="filter-select"
         >
-          {batchAnalyzing ? '分析中...' : '分析未分析图片'}
-        </button>
-        <button
-          onClick={() => handleBatchAnalyze(true)}
-          disabled={batchAnalyzing}
-          className="batch-analyze-btn batch-analyze-btn-secondary"
-        >
-          {batchAnalyzing ? '分析中...' : '重新分析全部'}
-        </button>
-        {unanalyzedCount > 0 && !batchAnalyzing && (
-          <span className="unanalyzed-count">（{unanalyzedCount} 张图片待分析）</span>
-        )}
+          <option value="all">全部图片</option>
+          <option value="analyzed">已分析</option>
+          <option value="unanalyzed">未分析</option>
+        </select>
+        
+        <div className="batch-analyze-buttons">
+          <button
+            onClick={() => handleBatchAnalyze(false)}
+            disabled={batchAnalyzing}
+            className="batch-analyze-btn"
+          >
+            {batchAnalyzing ? '分析中...' : '分析未分析图片'}
+          </button>
+          <button
+            onClick={() => handleBatchAnalyze(true)}
+            disabled={batchAnalyzing}
+            className="batch-analyze-btn batch-analyze-btn-secondary"
+          >
+            {batchAnalyzing ? '分析中...' : '重新分析全部'}
+          </button>
+        </div>
+        
+        <span className="image-count">
+          共 {images.length} 张图片
+          {unanalyzedCount > 0 && !batchAnalyzing && (
+            <span className="unanalyzed-count">（{unanalyzedCount} 张图片待分析）</span>
+          )}
+        </span>
         
         {batchAnalyzing && batchProgress.total > 0 && (
           <div className="batch-progress">
@@ -180,54 +271,6 @@ function ImagesPage({
           </div>
         )}
       </div>
-
-      <div className="filter-section">
-        <label>筛选：</label>
-        <select
-          value={analyzedFilter}
-          onChange={(e) => onAnalyzedFilterChange(e.target.value)}
-          className="filter-select"
-        >
-          <option value="all">全部图片</option>
-          <option value="analyzed">已分析</option>
-          <option value="unanalyzed">未分析</option>
-        </select>
-        <span className="image-count">
-          共 {images.length} 张图片
-        </span>
-      </div>
-
-      {showPromptSelection && draggedImage && (
-        <div className="staged-image-section">
-          <h3>暂存图片</h3>
-          <div className="staged-image-preview">
-            <img src={URL.createObjectURL(draggedImage)} alt="暂存图片" />
-            <p>文件名: {draggedImage.name}</p>
-            <p>大小: {(draggedImage.size / 1024).toFixed(2)} KB</p>
-          </div>
-          <form onSubmit={handleStagedImageUpload} className="form-group">
-            <label htmlFor="stagedPromptId">选择提示词：</label>
-            <select
-              id="stagedPromptId"
-              value={selectedPromptId}
-              onChange={(e) => setSelectedPromptId(e.target.value)}
-            >
-              <option value="">无</option>
-              {unusedPrompts.map((prompt) => (
-                <option key={prompt.id} value={prompt.id}>
-                  {prompt.content.substring(0, 50)}...
-                </option>
-              ))}
-            </select>
-            <div className="staged-image-actions">
-              <button type="submit">确认上传</button>
-              <button type="button" onClick={handleCancelStagedImage}>
-                取消
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       <div className="images-grid">
         {images.map((image) => (

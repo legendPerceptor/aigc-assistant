@@ -96,7 +96,7 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
   const batchAnalyze = async (forceAll = false) => {
     setBatchAnalyzing(true);
     setBatchProgress({ current: 0, total: 0 });
-    
+
     try {
       // 先获取需要分析的图片数量
       let imagesToAnalyze;
@@ -105,9 +105,9 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
       } else {
         imagesToAnalyze = images.filter((img) => !img.description);
       }
-      
+
       setBatchProgress({ current: 0, total: imagesToAnalyze.length });
-      
+
       const response = await fetch('/api/images/batch-analyze', {
         method: 'POST',
         headers: {
@@ -115,9 +115,9 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
         },
         body: JSON.stringify({ forceAll }),
       });
-      
+
       const result = await response.json();
-      
+
       // 模拟进度更新
       if (result.total > 0) {
         const progressInterval = setInterval(() => {
@@ -129,11 +129,11 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
             return { ...prev, current: prev.current + 1 };
           });
         }, 300);
-        
+
         // 等待进度完成
-        await new Promise(resolve => setTimeout(resolve, result.total * 300 + 500));
+        await new Promise((resolve) => setTimeout(resolve, result.total * 300 + 500));
       }
-      
+
       fetchImages();
       return result;
     } finally {

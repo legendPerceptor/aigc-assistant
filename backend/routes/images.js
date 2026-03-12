@@ -28,16 +28,24 @@ router.post('/', upload.single('image'), async (req, res) => {
     const projectRoot = path.resolve(__dirname, '..', '..');
     const absolutePath = path.join(projectRoot, 'backend', 'uploads', req.file.filename);
 
-    try {
-      const analysis = await imageServiceClient.analyzeImage(absolutePath);
-      await image.update({
-        description: analysis.description,
-        embedding: analysis.embedding,
-        embeddingModel: analysis.model,
-        analyzedAt: new Date(),
-      });
-    } catch (analyzeError) {
-      console.error('AI分析失败，但图片已保存:', analyzeError.message);
+    // 检查是否要自动分析，默认为true以保持向后兼容
+    const autoAnalyze =
+      req.body.autoAnalyze === undefined ||
+      req.body.autoAnalyze === 'true' ||
+      req.body.autoAnalyze === 'on';
+
+    if (autoAnalyze) {
+      try {
+        const analysis = await imageServiceClient.analyzeImage(absolutePath);
+        await image.update({
+          description: analysis.description,
+          embedding: analysis.embedding,
+          embeddingModel: analysis.model,
+          analyzedAt: new Date(),
+        });
+      } catch (analyzeError) {
+        console.error('AI分析失败，但图片已保存:', analyzeError.message);
+      }
     }
 
     const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
@@ -133,7 +141,7 @@ router.post('/:id/analyze', async (req, res) => {
     }
 
     const analysis = await imageServiceClient.analyzeImage(absolutePath);
-    
+
     await image.update({
       description: analysis.description,
       embedding: analysis.embedding,
@@ -302,7 +310,7 @@ router.post('/batch-analyze', async (req, res) => {
       .filter((filePath) => fs.existsSync(filePath));
 
     // 转换为绝对路径
-    const absolutePaths = imagePaths.map(filePath => path.resolve(filePath));
+    const absolutePaths = imagePaths.map((filePath) => path.resolve(filePath));
     const results = await imageServiceClient.batchProcessPaths(absolutePaths);
 
     let updated = 0;

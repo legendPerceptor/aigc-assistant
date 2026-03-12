@@ -59,11 +59,35 @@ function usePrompts() {
   const updatePromptImages = (imageId, updatedImage) => {
     setPrompts((prev) =>
       prev.map((prompt) => {
-        if (prompt.Images) {
-          return {
-            ...prompt,
-            Images: prompt.Images.map((image) => (image.id === imageId ? updatedImage : image)),
-          };
+        // 如果这个提示词是图片的新关联提示词
+        if (prompt.id === updatedImage.promptId) {
+          // 创建新的提示词对象，添加图片
+          const existingImages = prompt.Images || [];
+          const imageExists = existingImages.some((img) => img.id === imageId);
+
+          if (!imageExists) {
+            return {
+              ...prompt,
+              Images: [...existingImages, updatedImage],
+            };
+          } else {
+            // 如果图片已经存在，更新它
+            return {
+              ...prompt,
+              Images: existingImages.map((img) => (img.id === imageId ? updatedImage : img)),
+            };
+          }
+        } else {
+          // 对于其他提示词，移除这个图片（如果存在）
+          if (prompt.Images) {
+            const filteredImages = prompt.Images.filter((img) => img.id !== imageId);
+            if (filteredImages.length !== prompt.Images.length) {
+              return {
+                ...prompt,
+                Images: filteredImages,
+              };
+            }
+          }
         }
         return prompt;
       })
