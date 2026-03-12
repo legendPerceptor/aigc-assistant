@@ -82,11 +82,16 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
       const response = await fetch(`/api/images/${imageId}/analyze`, {
         method: 'POST',
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '分析失败');
+      }
       const updatedImage = await response.json();
       setImages((prev) => prev.map((image) => (image.id === imageId ? updatedImage : image)));
       return { success: true, image: updatedImage };
     } catch (error) {
       console.error('分析单张图片失败:', error);
+      alert(`分析失败: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
       setAnalyzingImageId(null);
@@ -116,6 +121,11 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
         body: JSON.stringify({ forceAll }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '批量分析失败');
+      }
+
       const result = await response.json();
 
       // 模拟进度更新
@@ -135,7 +145,17 @@ function useImages(prompts, { updatePromptImages, removeImageFromPrompts, fetchU
       }
 
       fetchImages();
+
+      if (result.failed > 0) {
+        alert(`批量分析完成: 成功 ${result.updated} 张，失败 ${result.failed} 张`);
+      }
+
       return result;
+    } catch (error) {
+      console.error('批量分析失败:', error);
+      alert(`批量分析失败: ${error.message}`);
+      fetchImages();
+      return { success: false, error: error.message };
     } finally {
       setBatchAnalyzing(false);
       setBatchProgress({ current: 0, total: 0 });
