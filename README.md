@@ -126,43 +126,71 @@ npm run start:image-service  # AI 服务 (端口 8001)
 aigc-assistant/
 ├── backend/
 │   ├── config/
-│   │   └── database.js      # 数据库配置
+│   │   └── database.js          # 数据库配置工厂
 │   ├── models/
-│   │   ├── index.js         # 数据库连接和模型导出
-│   │   ├── Prompt.js        # 提示词模型
-│   │   ├── Image.js         # 图片模型（含向量字段）
-│   │   ├── Theme.js         # 主题模型
-│   │   └── ThemeImage.js    # 主题-图片关联模型
+│   │   ├── index.js             # 数据库连接和模型导出
+│   │   ├── Prompt.js            # 提示词模型
+│   │   ├── Image.js             # 图片模型（含向量字段）
+│   │   ├── Theme.js             # 主题模型
+│   │   ├── ThemeImage.js        # 主题-图片关联模型
+│   │   ├── Asset.js             # 统一资产模型（知识图谱）
+│   │   └── AssetRelationship.js # 资产关系模型（知识图谱）
 │   ├── routes/
-│   │   ├── prompts.js       # 提示词 API
-│   │   ├── images.js        # 图片 API
-│   │   └── themes.js        # 主题 API
+│   │   ├── prompts.js           # 提示词 API
+│   │   ├── images.js            # 图片 API
+│   │   ├── themes.js            # 主题 API
+│   │   ├── assets.js            # 资产管理 API（含衍生版本）
+│   │   └── graph.js             # 知识图谱 API
 │   ├── services/
-│   │   └── imageServiceClient.js  # AI 服务客户端
+│   │   ├── imageServiceClient.js # AI 服务客户端
+│   │   └── graphService.js      # 图谱遍历服务
 │   ├── utils/
-│   │   └── vectorSearch.js  # 向量搜索工具
-│   ├── uploads/             # 上传的图片
-│   ├── .env                 # 环境变量配置
-│   ├── .env.example         # 环境变量模板
-│   ├── server.js            # 后端服务器
-│   └── database.db          # SQLite 数据库（默认）
+│   │   └── vectorSearch.js      # 向量搜索工具
+│   ├── migrations/              # 数据库迁移脚本
+│   │   └── migrateToAssets.js   # 迁移到知识图谱
+│   ├── uploads/                 # 上传的图片
+│   ├── .env                     # 环境变量配置
+│   ├── .env.example             # 环境变量模板
+│   ├── server.js                # 后端服务器
+│   └── database.db              # SQLite 数据库（默认）
 ├── frontend/
 │   ├── src/
-│   │   ├── components/      # 可复用组件
-│   │   ├── pages/           # 页面组件
-│   │   ├── hooks/           # 自定义 Hooks
-│   │   ├── App.jsx          # 主应用组件
-│   │   ├── main.jsx         # 入口文件
-│   │   └── index.css        # 样式文件
-│   └── public/              # 前端静态文件
+│   │   ├── components/
+│   │   │   ├── StarRating.jsx   # 评分组件
+│   │   │   ├── ImageCard.jsx    # 图片卡片
+│   │   │   ├── ImagePreviewModal.jsx  # 图片预览
+│   │   │   └── graph/           # 知识图谱组件
+│   │   │       ├── GraphCanvas.jsx    # 图谱画布
+│   │   │       ├── GraphControls.jsx  # 图谱控制面板
+│   │   │       └── GraphNodeDetails.jsx # 节点详情
+│   │   ├── pages/
+│   │   │   ├── PromptsPage.jsx       # 提示词管理
+│   │   │   ├── ImagesPage.jsx        # 图片管理
+│   │   │   ├── SearchPage.jsx        # 搜索页面
+│   │   │   ├── ThemesPage.jsx        # 主题管理
+│   │   │   └── KnowledgeGraphPage.jsx # 知识图谱
+│   │   ├── hooks/
+│   │   │   ├── usePrompts.js         # 提示词数据钩子
+│   │   │   ├── useImages.js          # 图片数据钩子
+│   │   │   ├── useThemes.js          # 主题数据钩子
+│   │   │   ├── useAssets.js          # 资产数据钩子
+│   │   │   └── useGraph.js           # 图谱数据钩子
+│   │   ├── App.jsx              # 主应用组件
+│   │   ├── main.jsx             # 入口文件
+│   │   └── index.css            # 样式文件
+│   └── public/                  # 前端静态文件
 ├── image-service/
-│   ├── main.py              # AI 服务入口
-│   ├── requirements.txt     # Python 依赖
-│   ├── .env                 # AI 服务环境变量
-│   └── .env.example         # 环境变量模板
-├── stop.sh                  # 停止服务脚本
-├── package.json             # 项目配置
-└── README.md                # 项目说明
+│   ├── main.py                  # AI 服务入口
+│   ├── image_processor.py       # 图片处理和嵌入生成
+│   ├── requirements.txt         # Python 依赖
+│   ├── .env                     # AI 服务环境变量
+│   └── .env.example             # 环境变量模板
+├── stop.sh                      # 停止服务脚本
+├── package.json                 # 项目配置
+├── CLAUDE.md                    # Claude Code 项目指南
+├── KNOWLEDGE_GRAPH.md           # 知识图谱详细文档
+├── developers.md                # 开发者指南
+└── README.md                    # 项目说明
 ```
 
 ## API 端点
@@ -194,6 +222,27 @@ aigc-assistant/
 - `POST /api/themes/:id/images` - 为主题添加图片
 - `DELETE /api/themes/:id/images/:imageId` - 从主题中移除图片
 
+### 资产管理 API（知识图谱）
+
+- `GET /api/assets` - 获取所有资产
+- `GET /api/assets/:id` - 获取单个资产详情
+- `POST /api/assets` - 创建新资产
+- `POST /api/assets/:id/derived` - 创建衍生版本（编辑/变体/放大/裁剪）
+- `PUT /api/assets/:id` - 更新资产信息
+- `DELETE /api/assets/:id` - 删除资产
+- `GET /api/assets/:id/versions` - 获取资产的所有衍生版本
+
+### 知识图谱 API
+
+- `GET /api/graph/nodes` - 获取图谱所有节点
+- `GET /api/graph/edges` - 获取图谱所有边
+- `GET /api/graph/neighbors/:id` - 获取节点的邻居
+- `GET /api/graph/path/:fromId/:toId` - 查找两节点间最短路径
+- `GET /api/graph/traverse/:id` - 广度优先遍历图谱
+- `GET /api/graph/components` - 获取连通组件
+- `POST /api/graph/relationship` - 创建资产关系
+- `DELETE /api/graph/relationship/:id` - 删除资产关系
+
 ## 开发指南
 
 ### 代码规范
@@ -213,12 +262,50 @@ npx prettier --write "**/*.js"
 
 ### 架构说明
 
-- **组件化设计**：将 UI 拆分为可复用的组件（StarRating、ImageCard）
+- **组件化设计**：将 UI 拆分为可复用的组件（StarRating、ImageCard、GraphCanvas）
 - **页面分离**：每个功能模块独立为页面组件
 - **状态管理**：使用自定义 Hooks 封装数据获取和状态逻辑
 - **单一职责**：每个文件只负责一个功能，便于维护和测试
 - **数据库抽象**：通过 Sequelize ORM 支持多种数据库
 - **向量搜索**：PostgreSQL 使用 pgvector，SQLite 使用 JSON 回退
+- **统一资产模型**：提示词、图片、衍生图片统一为 Asset，便于关系管理
+- **图谱服务**：独立的图遍历服务，支持 BFS、最短路径等算法
+- **关系追踪**：记录资产间的生成、衍生、版本、灵感等关系类型
+
+## 知识图谱
+
+AI Creator Vault 引入了知识图谱功能，将所有创作资产（提示词、图片、衍生版本）统一管理，并追踪它们之间的关系。
+
+### 核心概念
+
+- **资产类型**：
+  - `prompt` - AI 创作提示词
+  - `image` - AI 生成的原始图片
+  - `derived_image` - 衍生图片（编辑、变体、放大、裁剪）
+
+- **关系类型**：
+  - `generated` - 提示词生成图片
+  - `derived_from` - 从原始资产衍生
+  - `version_of` - 版本关系
+  - `inspired_by` - 灵感来源
+
+- **衍生类型**：
+  - `edit` - 编辑修改
+  - `variant` - 风格变体
+  - `upscale` - 放大增强
+  - `crop` - 裁剪
+
+### 数据迁移
+
+如果你已经在使用旧版本的提示词和图片管理，可以运行迁移脚本将数据导入知识图谱：
+
+```bash
+node backend/migrations/migrateToAssets.js
+```
+
+### 详细文档
+
+查看 [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md) 了解知识图谱的详细使用方法和 API 示例。
 
 ## 开发者指南
 
