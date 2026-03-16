@@ -44,7 +44,9 @@ services:
       - OPENAI_VISION_MODEL=${OPENAI_VISION_MODEL:-gpt-4o-mini}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
     volumes:
-      - uploads_data:/app/uploads
+      # 使用 bind mount，数据存储在宿主机
+      # 修改为你 NAS 上的实际路径
+      - ${UPLOADS_PATH:-./uploads}:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -137,7 +139,6 @@ services:
       retries: 3
 
 volumes:
-  uploads_data:
   postgres_data:
   redis_data:
   qdrant_data:
