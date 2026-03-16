@@ -51,3 +51,4 @@ build/
 .uv/
 
 uploads/
+xray/config.json
