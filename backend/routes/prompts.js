@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Prompt, Image } = require('../models');
+const { Prompt, Image, Asset, AssetRelationship, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 // 获取所有提示词
 router.get('/', async (req, res) => {
@@ -30,6 +31,25 @@ router.get('/unused', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const prompt = await Prompt.create(req.body);
+
+    // 自动同步到 Asset 表（知识图谱）
+    try {
+      const asset = await Asset.create({
+        assetType: 'prompt',
+        content: prompt.content,
+        score: prompt.score,
+        metadata: {
+          legacyPromptId: prompt.id,
+          type: prompt.type || 'text2image',
+        },
+      });
+
+      console.log(`[Prompt] Created Asset #${asset.id} for Prompt #${prompt.id}`);
+    } catch (assetError) {
+      console.error('[Prompt] Failed to create Asset:', assetError.message);
+      // 不影响主流程，只记录错误
+    }
+
     res.json(prompt);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -83,6 +103,33 @@ router.delete('/:id', async (req, res) => {
       for (const image of images) {
         await image.update({ promptId: null });
       }
+    }
+
+    // 删除关联的 Asset（知识图谱）
+    try {
+      const asset = await Asset.findOne({
+        where: {
+          assetType: 'prompt',
+          metadata: {
+            legacyPromptId: prompt.id,
+          },
+        },
+      });
+
+      if (asset) {
+        // 删除关联的关系
+        await AssetRelationship.destroy({
+          where: {
+            [Op.or]: [{ sourceId: asset.id }, { targetId: asset.id }],
+          },
+        });
+        // 删除 Asset
+        await asset.destroy();
+        console.log(`[Prompt] Deleted Asset #${asset.id} for Prompt #${prompt.id}`);
+      }
+    } catch (assetError) {
+      console.error('[Prompt] Failed to delete Asset:', assetError.message);
+      // 不影响主流程
     }
 
     // 从数据库中删除提示词记录

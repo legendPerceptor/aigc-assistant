@@ -66,6 +66,58 @@ router.post('/', upload.single('image'), async (req, res) => {
       }
     }
 
+    // 自动同步到 Asset 表（知识图谱）
+    try {
+      const { Asset, AssetRelationship } = require('../models');
+      const { Op } = require('sequelize');
+
+      const asset = await Asset.create({
+        assetType: 'image',
+        filename: image.filename,
+        path: image.path,
+        score: image.score,
+        description: image.description,
+        metadata: {
+          legacyImageId: image.id,
+          originalName: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype,
+        },
+      });
+
+      // 如果有关联的 promptId，创建 GENERATED 关系
+      if (req.body.promptId) {
+        // 查找 prompt 对应的 Asset
+        const promptAsset = await Asset.findOne({
+          where: {
+            assetType: 'prompt',
+            metadata: {
+              legacyPromptId: parseInt(req.body.promptId),
+            },
+          },
+        });
+
+        if (promptAsset) {
+          await AssetRelationship.create({
+            sourceId: promptAsset.id,
+            targetId: asset.id,
+            relationshipType: 'generated',
+            properties: {
+              createdAt: new Date().toISOString(),
+            },
+          });
+          console.log(
+            `[Image] Created GENERATED relationship: Asset #${promptAsset.id} -> Asset #${asset.id}`
+          );
+        }
+      }
+
+      console.log(`[Image] Created Asset #${asset.id} for Image #${image.id}`);
+    } catch (assetError) {
+      console.error('[Image] Failed to create Asset:', assetError.message);
+      // 不影响主流程，只记录错误
+    }
+
     const imageWithPrompt = await Image.findByPk(image.id, { include: Prompt });
     res.json(imageWithPrompt);
   } catch (error) {
@@ -134,6 +186,36 @@ router.delete('/:id', async (req, res) => {
 
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+    }
+
+    // 删除关联的 Asset（知识图谱）
+    try {
+      const { Asset, AssetRelationship } = require('../models');
+      const { Op } = require('sequelize');
+
+      const asset = await Asset.findOne({
+        where: {
+          assetType: 'image',
+          metadata: {
+            legacyImageId: image.id,
+          },
+        },
+      });
+
+      if (asset) {
+        // 删除关联的关系
+        await AssetRelationship.destroy({
+          where: {
+            [Op.or]: [{ sourceId: asset.id }, { targetId: asset.id }],
+          },
+        });
+        // 删除 Asset
+        await asset.destroy();
+        console.log(`[Image] Deleted Asset #${asset.id} for Image #${image.id}`);
+      }
+    } catch (assetError) {
+      console.error('[Image] Failed to delete Asset:', assetError.message);
+      // 不影响主流程
     }
 
     await image.destroy();

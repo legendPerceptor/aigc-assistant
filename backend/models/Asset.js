@@ -112,6 +112,12 @@ const Asset = (sequelize, dbType = 'sqlite') => {
       { fields: ['parentId'] },
       { fields: ['derivedType'] },
       { fields: ['createdAt'] },
+      // 添加唯一索引，防止重复内容
+      {
+        unique: true,
+        fields: ['assetType', 'content'],
+        name: 'unique_asset_content',
+      },
     ],
   });
 

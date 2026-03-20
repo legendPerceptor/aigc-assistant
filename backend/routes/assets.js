@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { Asset, AssetRelationship, sequelize } = require('../models');
 const graphService = require('../services/graphService');
+const crypto = require('crypto');
 
 // 根据环境选择 uploads 目录
 const UPLOADS_DIR =
@@ -29,6 +30,42 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
+
+// Find asset by type and content (for deduplication)
+router.get('/find', async (req, res) => {
+  try {
+    const { assetType, content } = req.query;
+
+    if (!assetType || !content) {
+      return res.status(400).json({
+        error: 'Missing required parameters: assetType, content',
+      });
+    }
+
+    // Validate asset type
+    const validTypes = ['prompt', 'image', 'derived_image'];
+    if (!validTypes.includes(assetType)) {
+      return res.status(400).json({
+        error: `Invalid assetType. Must be one of: ${validTypes.join(', ')}`,
+      });
+    }
+
+    const asset = await Asset.findOne({
+      where: {
+        assetType,
+        content,
+      },
+    });
+
+    if (asset) {
+      return res.json(graphService.assetToGraphNode(asset));
+    } else {
+      return res.status(404).json({ error: 'Asset not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get all assets with filtering
@@ -91,6 +128,8 @@ router.get('/:id', async (req, res) => {
 
 // Create a new asset
 router.post('/', async (req, res) => {
+  const body = req.body;
+
   try {
     const {
       assetType,
@@ -102,7 +141,7 @@ router.post('/', async (req, res) => {
       metadata,
       parentId,
       derivedType,
-    } = req.body;
+    } = body;
 
     // Validate asset type
     const validTypes = ['prompt', 'image', 'derived_image'];
@@ -144,6 +183,26 @@ router.post('/', async (req, res) => {
 
     res.status(201).json(graphService.assetToGraphNode(asset));
   } catch (error) {
+    // Handle unique constraint violation
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      // Try to find the existing asset and return it
+      try {
+        const existing = await Asset.findOne({
+          where: {
+            assetType: body.assetType,
+            content: body.content,
+          },
+        });
+        if (existing) {
+          return res.status(409).json({
+            error: 'Asset already exists',
+            asset: graphService.assetToGraphNode(existing),
+          });
+        }
+      } catch (findError) {
+        // Ignore find error, fall through to original error
+      }
+    }
     res.status(500).json({ error: error.message });
   }
 });
