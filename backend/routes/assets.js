@@ -158,6 +158,23 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Check for duplicate (assetType + content should be unique)
+    if (content) {
+      const existing = await Asset.findOne({
+        where: {
+          assetType,
+          content,
+        },
+      });
+
+      if (existing) {
+        return res.status(409).json({
+          error: 'Asset already exists',
+          asset: graphService.assetToGraphNode(existing),
+        });
+      }
+    }
+
     const asset = await Asset.create({
       assetType,
       content,
@@ -183,7 +200,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json(graphService.assetToGraphNode(asset));
   } catch (error) {
-    // Handle unique constraint violation
+    // Handle unique constraint violation (race condition fallback)
     if (error.name === 'SequelizeUniqueConstraintError') {
       // Try to find the existing asset and return it
       try {

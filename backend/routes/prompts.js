@@ -14,6 +14,30 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 根据内容精确查找提示词（用于去重检查）
+router.get('/find', async (req, res) => {
+  try {
+    const { content } = req.query;
+
+    if (!content) {
+      return res.status(400).json({ error: 'content parameter is required' });
+    }
+
+    const prompt = await Prompt.findOne({
+      where: { content },
+      include: Image,
+    });
+
+    if (!prompt) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    res.json(prompt);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 获取未被使用的提示词
 router.get('/unused', async (req, res) => {
   try {
@@ -30,6 +54,26 @@ router.get('/unused', async (req, res) => {
 // 创建新提示词
 router.post('/', async (req, res) => {
   try {
+    const { content } = req.body;
+
+    // 检查是否已存在相同内容的提示词
+    if (content) {
+      const existingPrompt = await Prompt.findOne({
+        where: { content },
+      });
+
+      if (existingPrompt) {
+        return res.status(409).json({
+          error: 'Prompt already exists',
+          existingPrompt: {
+            id: existingPrompt.id,
+            content: existingPrompt.content,
+            score: existingPrompt.score,
+          },
+        });
+      }
+    }
+
     const prompt = await Prompt.create(req.body);
 
     // 自动同步到 Asset 表（知识图谱）
@@ -50,8 +94,14 @@ router.post('/', async (req, res) => {
       // 不影响主流程，只记录错误
     }
 
-    res.json(prompt);
+    res.status(201).json(prompt);
   } catch (error) {
+    // 处理数据库唯一约束冲突
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({
+        error: 'Prompt with this content already exists',
+      });
+    }
     res.status(500).json({ error: error.message });
   }
 });
